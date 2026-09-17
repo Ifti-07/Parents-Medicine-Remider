@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <!-- Background -->
+  <rect width="192" height="192" rx="42.24" fill="#2563eb"/>
+  
+  <!-- Eye drop bottle body -->
+  <g transform="translate(96, 96)">
+    <!-- Bottle body -->
+    <ellipse cx="0" cy="12.9024" rx="35.4816" ry="48.384" fill="white" opacity="0.95"/>
+    
+    <!-- Bottle cap/nozzle -->
+    <rect x="-16.128" y="-67.7376" width="32.256" height="29.0304" rx="6.4512" fill="white" opacity="0.9"/>
+    
+    <!-- Nozzle tip -->
+    <circle cx="0" cy="-67.7376" r="7.2576" fill="#93c5fd"/>
+    
+    <!-- Drop falling -->
+    <ellipse cx="0" cy="74.1888" 
+      rx="12.9024" ry="17.7408" 
+      fill="#ffffff" opacity="0.9"/>
+    <polygon 
+      points="-12.9024,64.512 12.9024,64.512 0,45.15840000000001" 
+      fill="#ffffff" opacity="0.9"/>
+  </g>
+</svg>

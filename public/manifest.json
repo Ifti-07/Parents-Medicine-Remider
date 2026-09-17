@@ -1,0 +1,46 @@
+{
+  "name": "আমার ওষুধ - Medicine Reminder",
+  "short_name": "আমার ওষুধ",
+  "description": "মা-বাবার ওষুধের সময়সূচি ও রিমাইন্ডার অ্যাপ",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "lang": "bn",
+  "dir": "ltr",
+  "categories": ["health", "medical", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "হোম",
+      "url": "/",
+      "description": "হোম স্ক্রিনে যান"
+    },
+    {
+      "name": "ইতিহাস",
+      "url": "/history",
+      "description": "ওষুধের ইতিহাস দেখুন"
+    }
+  ]
+}

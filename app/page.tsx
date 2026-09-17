@@ -1,101 +1,173 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+import { useState, useEffect, useCallback } from 'react';
+import Header from '@/components/layout/Header';
+import CortisolCard from '@/components/medicine/CortisolCard';
+import FourHourContainer from '@/components/medicine/FourHourContainer';
+import NextMedicineSection from '@/components/medicine/NextMedicineSection';
+import LastGivenSection from '@/components/medicine/LastGivenSection';
+import { IMedicine, IMedicineRecord } from '@/types';
+import { getDhakaDate, getDhakaDateParts, isActiveWindow } from '@/lib/scheduling';
+import { syncOfflineRecords } from '@/lib/indexeddb';
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+export default function HomePage() {
+  const [medicines, setMedicines] = useState<IMedicine[]>([]);
+  const [todayRecords, setTodayRecords] = useState<IMedicineRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchData = useCallback(async () => {
+    try {
+      const [medRes, recRes] = await Promise.all([
+        fetch('/api/medicines'),
+        fetch(`/api/records?date=${getDhakaDate()}`),
+      ]);
+
+      if (medRes.ok) {
+        const medData = await medRes.json();
+        if (medData.success) setMedicines(medData.data);
+      }
+
+      if (recRes.ok) {
+        const recData = await recRes.json();
+        if (recData.success) setTodayRecords(recData.data);
+      }
+
+      setError(null);
+    } catch {
+      setError('ডেটা লোড করতে সমস্যা হয়েছে। পুনরায় চেষ্টা করুন।');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+
+    // Try to sync offline records when online
+    const handleOnline = async () => {
+      try {
+        const synced = await syncOfflineRecords();
+        if (synced > 0) {
+          fetchData(); // Refresh data after sync
+        }
+      } catch {
+        // Ignore sync errors silently
+      }
+    };
+
+    window.addEventListener('online', handleOnline);
+
+    // Attempt sync on load too
+    if (navigator.onLine) {
+      handleOnline();
+    }
+
+    return () => window.removeEventListener('online', handleOnline);
+  }, [fetchData]);
+
+  const handleDoseGiven = useCallback(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const cortisolMedicine = medicines.find((m) => m.group === 'cortisol');
+  const nclMedicine = medicines.find((m) => m.group === 'four-hour' && m.order === 1);
+  const moxibacMedicine = medicines.find((m) => m.group === 'four-hour' && m.order === 2);
+
+  const parts = getDhakaDateParts();
+  const activeWindow = isActiveWindow();
+
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto mb-4" />
+          <p className="text-lg text-slate-600">লোড হচ্ছে...</p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      </div>
+    );
+  }
+
+  return (
+    <main className="flex-1">
+      <Header />
+
+      <div className="max-w-lg mx-auto px-4 py-5 space-y-5">
+        {error && (
+          <div
+            className="bg-red-50 border-2 border-red-200 rounded-xl px-4 py-4"
+            role="alert"
+            aria-live="polite"
+          >
+            <p className="text-base font-semibold text-red-700">{error}</p>
+            <button
+              onClick={fetchData}
+              className="mt-2 text-base text-red-600 underline font-medium"
+            >
+              পুনরায় চেষ্টা করুন
+            </button>
+          </div>
+        )}
+
+        {/* Next Medicine Section */}
+        <NextMedicineSection
+          medicines={medicines}
+          todayRecords={todayRecords}
+          currentHour={parts.hour}
+          currentMinute={parts.minute}
+          isActiveWindow={activeWindow}
+        />
+
+        {/* Section Title */}
+        <div>
+          <h2 className="text-xl font-bold text-slate-800 mb-4">আজকের ওষুধ</h2>
+
+          <div className="space-y-5">
+            {/* Cortisol Card */}
+            {cortisolMedicine ? (
+              <CortisolCard
+                medicine={cortisolMedicine}
+                todayRecords={todayRecords}
+                onDoseGiven={handleDoseGiven}
+              />
+            ) : (
+              <div className="bg-slate-100 rounded-2xl p-6 text-center">
+                <p className="text-slate-500 text-base">কর্টিসলের তথ্য পাওয়া যাচ্ছে না।</p>
+              </div>
+            )}
+
+            {/* 4-Hour Container */}
+            {nclMedicine && moxibacMedicine ? (
+              <FourHourContainer
+                nclMedicine={nclMedicine}
+                moxibacMedicine={moxibacMedicine}
+                todayRecords={todayRecords}
+                onDoseGiven={handleDoseGiven}
+              />
+            ) : (
+              <div className="bg-slate-100 rounded-2xl p-6 text-center">
+                <p className="text-slate-500 text-base">৪ ঘণ্টার ওষুধের তথ্য পাওয়া যাচ্ছে না।</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Last Given Section */}
+        <LastGivenSection records={todayRecords} />
+
+        {/* Offline indicator */}
+        {typeof window !== 'undefined' && !navigator.onLine && (
+          <div
+            className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3"
+            role="status"
+            aria-live="polite"
+          >
+            <p className="text-sm text-amber-700 font-medium">
+              📴 অফলাইনে কাজ করছে। ইন্টারনেট পেলে স্বয়ংক্রিয়ভাবে সংরক্ষণ হবে।
+            </p>
+          </div>
+        )}
+      </div>
+    </main>
   );
 }
